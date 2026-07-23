@@ -16,3 +16,18 @@ def main_menu():
         resize_keyboard=True,
         one_time_keyboard=False
     )
+
+
+def admin_menu():
+    keyboard = [
+        ["🔐 لوحة الإدارة"],
+        ["📚 المواد الدراسية", "📁 الملخصات"],
+        ["📝 التكاليف", "📢 الإعلانات"],
+        ["⚙️ إعدادات النظام"],
+    ]
+
+    return ReplyKeyboardMarkup(
+        keyboard,
+        resize_keyboard=True,
+        one_time_keyboard=False
+    )

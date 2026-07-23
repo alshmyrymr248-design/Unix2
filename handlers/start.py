@@ -1,10 +1,13 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from keyboards.main_menu import main_menu
+from keyboards.main_menu import main_menu, admin_menu
+from config import ADMIN_IDS
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    user_id = update.effective_user.id
 
     welcome_message = """
 ╔════════════════════════════╗
@@ -44,7 +47,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 مع UniX2.
 """
 
+    if user_id in ADMIN_IDS:
+        keyboard = admin_menu()
+    else:
+        keyboard = main_menu()
+
     await update.message.reply_text(
         welcome_message,
-        reply_markup=main_menu()
+         reply_markup=keyboard
     )

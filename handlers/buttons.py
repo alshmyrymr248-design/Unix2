@@ -332,6 +332,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+    elif text == "🔐 لوحة الإدارة":
+
+        from handlers.admin import admin_panel
+
+        await admin_panel(update, context)
+
 
 
     else:

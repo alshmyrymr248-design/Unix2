@@ -3,9 +3,13 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from config import BOT_TOKEN
 from handlers.start import start
 from handlers.buttons import button_handler
+from database.models import create_tables
 
 
 def main():
+
+    # إنشاء جداول قاعدة البيانات
+    create_tables()
 
     app = Application.builder().token(BOT_TOKEN).build()
 

@@ -339,9 +339,30 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await admin_panel(update, context)
 
 
+    elif text == "📚 إدارة الملخصات":
+
+        await update.message.reply_text(
+        """
+━━━━━━━━━━━━━━━━━━━━
+📚 إدارة الملخصات
+━━━━━━━━━━━━━━━━━━━━
+
+اختر العملية التي تريد تنفيذها:
+
+➕ إضافة ملخص
+📂 عرض الملخصات
+❌ حذف ملخص
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+"""
+        )
+
 
     else:
 
         await update.message.reply_text(
             "⚡ اختر أحد الخيارات من القائمة الرئيسية."
         )
+

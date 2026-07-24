@@ -1,6 +1,9 @@
 
 from telegram import Update
 from telegram.ext import ContextTypes
+from telegram.ext import ConversationHandler
+from keyboards.main_menu import summaries_admin_menu, subjects_summary_menu
+from database.queries import get_summaries
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -342,22 +345,114 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == "📚 إدارة الملخصات":
 
         await update.message.reply_text(
-        """
+            """
 ━━━━━━━━━━━━━━━━━━━━
 📚 إدارة الملخصات
 ━━━━━━━━━━━━━━━━━━━━
 
 اختر العملية التي تريد تنفيذها:
 
-➕ إضافة ملخص
-📂 عرض الملخصات
-❌ حذف ملخص
+
 
 ━━━━━━━━━━━━━━━━━━━━
 🚀 UniX2
 💡 نظامك الجامعي الذكي
-"""
+""",
+            reply_markup=summaries_admin_menu()
         )
+
+
+    elif text == "➕ إضافة ملخص":
+
+        await update.message.reply_text(
+            """
+━━━━━━━━━━━━━━━━━━━━
+➕ إضافة ملخص جديد
+━━━━━━━━━━━━━━━━━━━━
+
+📚 اختر المادة التي تريد إضافة ملخص لها:
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+""",
+            reply_markup=subjects_summary_menu()
+        )
+
+
+    elif text in [
+        "🗄️ أساسيات قواعد البيانات",
+        "💻 معمارية وتنظيم الحاسوب",
+        "☕ البرمجة الكائنية التوجه (Java)",
+        "🌐 شبكات الحاسوب",
+        "🎨 تصميم الويب 1",
+        "🗣️ مهارات الاتصال",
+        "🇾🇪 ثقافة وطنية",
+    ]:
+
+        summaries = get_summaries(text)
+
+        if summaries:
+
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📚 ملخصات المادة\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"📖 المادة: {text}\n\n"
+                "📂 الملخصات المتوفرة:\n\n"
+            )
+
+            for title, file_id in summaries:
+                message += f"📄 {title}\n"
+
+            message += (
+                "\n━━━━━━━━━━━━━━━━━━━━\n"
+                "🚀 UniX2\n"
+                "💡 نظامك الجامعي الذكي"
+            )
+
+        else:
+
+            message = (
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "📚 ملخصات المادة\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"📖 المادة: {text}\n\n"
+                "⚠️ لا توجد ملخصات مضافة لهذه المادة حالياً.\n\n"
+                "🔔 سيتم إضافة الملخصات قريباً.\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "🚀 UniX2\n"
+                "💡 نظامك الجامعي الذكي"
+            )
+
+        await update.message.reply_text(message)
+
+
+    elif text == "🔙 العودة للقائمة الرئيسية":
+
+        from keyboards.main_menu import main_menu
+
+        await update.message.reply_text(
+            "🏠 تم الرجوع إلى القائمة الرئيسية.",
+            reply_markup=main_menu()
+        )
+
+
+    elif text == "🔙 العودة للوحة الإدارة":
+
+        from keyboards.main_menu import admin_menu
+
+        await update.message.reply_text(
+            "🔐 تم الرجوع إلى لوحة الإدارة.",
+            reply_markup=admin_menu()
+        )
+
+    elif text == "🔙 العودة":
+
+        await update.message.reply_text(
+            "🔐 تم الرجوع إلى إدارة الملخصات.",
+            reply_markup=summaries_admin_menu()
+        )
+
 
 
     else:

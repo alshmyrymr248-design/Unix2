@@ -2,8 +2,8 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from telegram.ext import ConversationHandler
-from keyboards.main_menu import summaries_admin_menu, subjects_summary_menu
-from database.queries import get_summaries
+from keyboards.main_menu import summaries_admin_menu, subjects_summary_menu, lectures_summary_menu
+from database.queries import get_summaries, add_summary
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -364,6 +364,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif text == "➕ إضافة ملخص":
 
+        context.user_data["adding_summary"] = True
+
         await update.message.reply_text(
             """
 ━━━━━━━━━━━━━━━━━━━━
@@ -374,6 +376,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 ━━━━━━━━━━━━━━━━━━━━
 🚀 UniX2
+💡 نظامك الجامعي الذكي
 """,
             reply_markup=subjects_summary_menu()
         )
@@ -389,6 +392,30 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🇾🇪 ثقافة وطنية",
     ]:
 
+        if context.user_data.get("adding_summary"):
+
+            context.user_data["subject"] = text
+
+            await update.message.reply_text(
+                f"""
+━━━━━━━━━━━━━━━━━━━━
+📖 اختيار المحاضرة
+━━━━━━━━━━━━━━━━━━━━
+
+📚 المادة:
+{text}
+
+اختر المحاضرة التي تريد إضافة ملخص لها 👇
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+                reply_markup=lectures_summary_menu()
+            )
+
+            return
+
         summaries = get_summaries(text)
 
         if summaries:
@@ -401,8 +428,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "📂 الملخصات المتوفرة:\n\n"
             )
 
-            for title, file_id in summaries:
-                message += f"📄 {title}\n"
+            for lecture, file_id in summaries:
+                message += f"📄 {lecture}\n"
 
             message += (
                 "\n━━━━━━━━━━━━━━━━━━━━\n"
@@ -427,6 +454,64 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(message)
 
 
+    elif text in [
+        "1️⃣ المحاضرة الأولى",
+        "2️⃣ المحاضرة الثانية",
+        "3️⃣ المحاضرة الثالثة",
+        "4️⃣ المحاضرة الرابعة",
+        "5️⃣ المحاضرة الخامسة",
+        "6️⃣ المحاضرة السادسة",
+        "7️⃣ المحاضرة السابعة",
+        "🔙 العودة للمواد",
+    ]:
+
+
+        if text == "🔙 العودة للمواد":
+
+            await update.message.reply_text(
+                """
+━━━━━━━━━━━━━━━━━━━━
+➕ إضافة ملخص جديد
+━━━━━━━━━━━━━━━━━━━━
+
+📚 اختر المادة التي تريد إضافة ملخص لها:
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+                reply_markup=subjects_summary_menu()
+            )
+
+            return
+
+
+        if context.user_data.get("adding_summary"):
+
+            context.user_data["lecture"] = text
+
+
+            await update.message.reply_text(
+                """
+━━━━━━━━━━━━━━━━━━━━
+📎 رفع الملخص
+━━━━━━━━━━━━━━━━━━━━
+
+أرسل ملف الملخص الآن:
+
+✅ PDF
+✅ DOC
+✅ DOCX
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+"""
+            )
+
+            return
+
+
     elif text == "🔙 العودة للقائمة الرئيسية":
 
         from keyboards.main_menu import main_menu
@@ -446,6 +531,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=admin_menu()
         )
 
+
     elif text == "🔙 العودة":
 
         await update.message.reply_text(
@@ -460,4 +546,4 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "⚡ اختر أحد الخيارات من القائمة الرئيسية."
         )
-
+        

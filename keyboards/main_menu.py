@@ -67,3 +67,22 @@ def subjects_summary_menu():
         resize_keyboard=True,
         one_time_keyboard=False
     )
+
+
+def lectures_summary_menu():
+    keyboard = [
+        ["1️⃣ المحاضرة الأولى"],
+        ["2️⃣ المحاضرة الثانية"],
+        ["3️⃣ المحاضرة الثالثة"],
+        ["4️⃣ المحاضرة الرابعة"],
+        ["5️⃣ المحاضرة الخامسة"],
+        ["6️⃣ المحاضرة السادسة"],
+        ["7️⃣ المحاضرة السابعة"],
+        ["🔙 العودة للمواد"],
+    ]
+
+    return ReplyKeyboardMarkup(
+        keyboard,
+        resize_keyboard=True,
+        one_time_keyboard=False
+    )

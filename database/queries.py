@@ -1,20 +1,21 @@
 from database.database import get_connection
 
 
-def add_summary(subject, title, file_id):
+def add_summary(subject, lecture, file_id):
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
         """
-        INSERT INTO summaries (subject, title, file_id)
+        INSERT INTO summaries (subject, lecture, file_id)
         VALUES (?, ?, ?)
         """,
-        (subject, title, file_id)
+        (subject, lecture, file_id)
     )
 
     conn.commit()
     conn.close()
+
 
 
 def get_summaries(subject):
@@ -23,7 +24,7 @@ def get_summaries(subject):
 
     cursor.execute(
         """
-        SELECT title, file_id
+        SELECT lecture, file_id
         FROM summaries
         WHERE subject = ?
         """,
@@ -35,6 +36,7 @@ def get_summaries(subject):
     conn.close()
 
     return data
+
 
 
 def delete_summary(summary_id):

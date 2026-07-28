@@ -9,10 +9,11 @@ def create_tables():
     CREATE TABLE IF NOT EXISTS summaries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         subject TEXT NOT NULL,
-        title TEXT NOT NULL,
+        lecture TEXT NOT NULL,
         file_id TEXT NOT NULL
     )
     """)
 
     conn.commit()
     conn.close()
+    

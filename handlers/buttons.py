@@ -2,7 +2,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from telegram.ext import ConversationHandler
-from keyboards.main_menu import summaries_admin_menu, subjects_summary_menu, lectures_summary_menu
+from keyboards.main_menu import summaries_admin_menu, subjects_summary_menu, lectures_summary_menu, view_summaries_menu
 from database.queries import get_summaries, add_summary
 
 
@@ -362,6 +362,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+    elif text == "📂 عرض الملخصات":
+
+        context.user_data["viewing_summary"] = True
+
+        await update.message.reply_text(
+            """
+━━━━━━━━━━━━━━━━━━━━
+📂 عرض الملخصات
+━━━━━━━━━━━━━━━━━━━━
+
+📚 اختر المادة التي تريد عرض ملخصاتها:
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+            reply_markup=subjects_summary_menu()
+        )
+
+
     elif text == "➕ إضافة ملخص":
 
         context.user_data["adding_summary"] = True
@@ -416,6 +436,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             return
 
+
+        if context.user_data.get("viewing_summary"):
+
+            context.user_data["subject"] = text
+
+
+        lectures = []
+
         summaries = get_summaries(text)
 
         if summaries:
@@ -428,8 +456,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "📂 الملخصات المتوفرة:\n\n"
             )
 
+            lectures = []
+
             for lecture, file_id in summaries:
-                message += f"📄 {lecture}\n"
+                lectures.append(lecture)
 
             message += (
                 "\n━━━━━━━━━━━━━━━━━━━━\n"
@@ -451,7 +481,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "💡 نظامك الجامعي الذكي"
             )
 
-        await update.message.reply_text(message)
+        await update.message.reply_text(
+            message,
+            reply_markup=view_summaries_menu(lectures)
+        )
 
 
     elif text in [
@@ -486,6 +519,37 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
 
+        if context.user_data.get("viewing_summary"):
+
+            subject = context.user_data.get("subject")
+
+            summaries = get_summaries(subject)
+
+            for lecture, file_id in summaries:
+                if lecture == text:
+
+                    await update.message.reply_document(
+                        file_id,
+                        caption=f"""
+━━━━━━━━━━━━━━━━━━━━
+📚 ملخص المادة
+━━━━━━━━━━━━━━━━━━━━
+
+📖 المادة:
+{subject}
+
+📎 المحاضرة:
+{lecture}
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+"""
+                    )
+
+                    return
+
+
         if context.user_data.get("adding_summary"):
 
             context.user_data["lecture"] = text
@@ -510,6 +574,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             return
+
 
 
     elif text == "🔙 العودة للقائمة الرئيسية":
@@ -546,4 +611,4 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "⚡ اختر أحد الخيارات من القائمة الرئيسية."
         )
-        
+

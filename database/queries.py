@@ -7,6 +7,14 @@ def add_summary(subject, lecture, file_id):
 
     cursor.execute(
         """
+        DELETE FROM summaries
+        WHERE subject = ? AND lecture = ?
+        """,
+        (subject, lecture)
+    )
+
+    cursor.execute(
+        """
         INSERT INTO summaries (subject, lecture, file_id)
         VALUES (?, ?, ?)
         """,
@@ -24,9 +32,10 @@ def get_summaries(subject):
 
     cursor.execute(
         """
-        SELECT lecture, file_id
+        SELECT DISTINCT lecture, file_id
         FROM summaries
         WHERE subject = ?
+        ORDER BY lecture
         """,
         (subject,)
     )
@@ -36,6 +45,7 @@ def get_summaries(subject):
     conn.close()
 
     return data
+
 
 
 

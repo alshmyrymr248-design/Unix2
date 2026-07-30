@@ -53,11 +53,4 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.pop("subject", None)
     context.user_data.pop("lecture", None)
     context.user_data.pop("adding_summary", None)
-
-    from keyboards.main_menu import subjects_summary_menu
-
-    await update.message.reply_text(
-        "📚 تم الرجوع إلى قائمة المواد.",
-        reply_markup=subjects_summary_menu()
-    )
-
+    

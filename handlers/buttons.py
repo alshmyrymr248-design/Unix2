@@ -3,7 +3,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from telegram.ext import ConversationHandler
 from keyboards.main_menu import summaries_admin_menu, subjects_summary_menu, lectures_summary_menu, view_summaries_menu
-from database.queries import get_summaries, add_summary
+from database.queries import get_summaries, add_summary, delete_summary, delete_summary_by_subject
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -364,6 +364,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif text == "📂 عرض الملخصات":
 
+        context.user_data["deleting_summary"] = False
         context.user_data["viewing_summary"] = True
 
         await update.message.reply_text(
@@ -380,6 +381,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """,
             reply_markup=subjects_summary_menu()
         )
+
+    elif text == "❌ حذف ملخص":
+
+        context.user_data["deleting_summary"] = True
+
+        await update.message.reply_text(
+            """
+━━━━━━━━━━━━━━━━━━━━
+❌ حذف ملخص
+━━━━━━━━━━━━━━━━━━━━
+
+📚 اختر المادة التي تريد حذف ملخص منها:
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+            reply_markup=subjects_summary_menu()
+        )
+
 
 
     elif text == "➕ إضافة ملخص":
@@ -436,6 +457,38 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             return
 
+        if context.user_data.get("deleting_summary"):
+
+            context.user_data["subject"] = text
+
+            summaries = get_summaries(text)
+
+            lectures = []
+
+            for lecture, file_id in summaries:
+                lectures.append(lecture)
+
+            await update.message.reply_text(
+                f"""
+━━━━━━━━━━━━━━━━━━━━
+❌ حذف ملخص
+━━━━━━━━━━━━━━━━━━━━
+
+📚 المادة:
+{text}
+
+اختر المحاضرة التي تريد حذفها 👇
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+                reply_markup=view_summaries_menu(lectures)
+            )
+
+            return
+
+
 
         if context.user_data.get("viewing_summary"):
 
@@ -460,6 +513,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             for lecture, file_id in summaries:
                 lectures.append(lecture)
+                message += f"• {lecture}\n"
 
             message += (
                 "\n━━━━━━━━━━━━━━━━━━━━\n"
@@ -547,7 +601,39 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """
                     )
 
-                    return
+            return
+
+        if context.user_data.get("deleting_summary"):
+
+            subject = context.user_data.get("subject")
+
+            delete_summary_by_subject(
+                subject,
+                text
+            )
+
+            await update.message.reply_text(
+                f"""
+━━━━━━━━━━━━━━━━━━━━
+✅ تم حذف الملخص بنجاح
+━━━━━━━━━━━━━━━━━━━━
+
+📚 المادة:
+{subject}
+
+📖 المحاضرة:
+{text}
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+"""
+            )
+            context.user_data["deleting_summary"] = False
+            context.user_data["subject"] = None
+
+            return
+
 
 
         if context.user_data.get("adding_summary"):

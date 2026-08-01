@@ -63,3 +63,21 @@ def delete_summary(summary_id):
 
     conn.commit()
     conn.close()
+
+
+
+def delete_summary_by_subject(subject, lecture):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        DELETE FROM summaries
+        WHERE subject = ? AND lecture = ?
+        """,
+        (subject, lecture)
+    )
+
+    conn.commit()
+    conn.close()
+

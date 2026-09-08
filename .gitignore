@@ -1,4 +1,6 @@
 .env
+config.py
+unix2.db
 __pycache__/
-venv/
 *.pyc
+venv/

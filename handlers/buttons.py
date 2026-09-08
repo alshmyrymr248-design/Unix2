@@ -1,348 +1,458 @@
-
 from telegram import Update
 from telegram.ext import ContextTypes
-from telegram.ext import ConversationHandler
-from keyboards.main_menu import summaries_admin_menu, subjects_summary_menu, lectures_summary_menu, view_summaries_menu
-from database.queries import get_summaries, add_summary, delete_summary, delete_summary_by_subject
 
+from keyboards.main_menu import (
+    main_menu,
+    summaries_admin_menu,
+    subjects_summary_menu,
+    lectures_summary_menu,
+    view_summaries_menu,
+    subjects_exam_menu,
+    exams_menu,
+    ai_chat_button,
+)
+from keyboards.admin_menu import admin_menu, exams_admin_menu
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    text = update.message.text
-
-
-    if text == "📚 المواد الدراسية":
-
-        await update.message.reply_text(
-                "━━━━━━━━━━━━━━━━━━\n"
-    "📚 المواد الدراسية\n"
-    "🎓 المستوى الثاني\n"
-                "━━━━━━━━━━━━━━━━━━\n\n"
-
-    "اختر المادة التي تريد معرفة تفاصيلها 👇\n\n"
-
-    "🗄️ أساسيات قواعد البيانات\n"
-    "💻 معمارية وتنظيم الحاسوب\n"
-    "☕ البرمجة الكائنية التوجه (Java)\n"
-    "🌐 شبكات الحاسوب\n"
-    "🎨 تصميم الويب 1\n"
-    "🗣️ مهارات الاتصال\n"
-    "🇾🇪 ثقافة وطنية\n\n"
-
-    "━━━━━━━━━━━━━━━━━━\n"
-    "🚀 UniX2"
+from database.queries import (
+    get_summaries,
+    delete_summary_by_subject,
+    get_exams,
+    add_exam,
+    delete_exam_by_subject,
+    get_assignments,
 )
 
 
+# =========================================================
+# تنظيف حالات المستخدم
+# =========================================================
+
+def clear_user_states(context):
+    context.user_data.pop("viewing_exam", None)
+    context.user_data.pop("exam_subject", None)
+
+    context.user_data.pop("adding_summary", None)
+    context.user_data.pop("viewing_summary", None)
+    context.user_data.pop("deleting_summary", None)
+
+    context.user_data.pop("adding_exam", None)
+    context.user_data.pop("deleting_exam", None)
+
+    context.user_data.pop("subject", None)
+    context.user_data.pop("lecture", None)
+    context.user_data.pop("exam_name", None)
+
+
+# =========================================================
+# معالج الأزرار الرئيسي
+# =========================================================
+
+async def button_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+
+# =====================================================
+# وضع الذكاء الاصطناعي 
+# =====================================================
+
+    if context.user_data.get("ai_mode"):
+        from handlers.ai import ai_reply
+        await ai_reply(update, context)
+        return
+
+    if not update.message or not update.message.text:
+        return
+
+    text = update.message.text
+
+    # =====================================================
+    # القائمة الرئيسية
+    # =====================================================
+
+    if text == "📚 المواد الدراسية":
+
+        clear_user_states(context)
+
+        await update.message.reply_text(
+            "━━━━━━━━━━━━━━━━━━\n"
+            "📚 المواد الدراسية\n"
+            "🎓 المستوى الثاني\n"
+            "━━━━━━━━━━━━━━━━━━\n\n"
+            "📚 المواد الدراسية:\n\n"
+            "🗄️ أساسيات قواعد البيانات\n"
+            "💻 معمارية وتنظيم الحاسوب\n"
+            "☕ البرمجة الكائنية التوجه (Java)\n"
+            "🌐 شبكات الحاسوب\n"
+            "🎨 تصميم الويب 1\n"
+            "🗣️ مهارات الاتصال\n"
+            "🇾🇪 ثقافة وطنية\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "🚀 UniX2\n"
+            "💡 نظامك الجامعي الذكي"
+        )
+
+        return
+
+    # =====================================================
+    # الملخصات
+    # =====================================================
 
     elif text == "📁 الملخصات":
 
+        clear_user_states(context)
+
+        context.user_data["viewing_summary"] = True
+
         await update.message.reply_text(
-              "━━━━━━━━━━━━━━━━━━\n"
-        "📁 الملخصات\n"
-        "🎓 المستوى الثاني\n"
-        "━━━━━━━━━━━━━━━━━━\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "📁 الملخصات\n"
+            "🎓 المستوى الثاني\n"
+            "━━━━━━━━━━━━━━━━━━\n\n"
+            "اختر المادة التي تريد ملخصاتها 👇\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "🚀 UniX2"
+        )
 
-        "اختر المادة التي تريد ملخصاتها 👇\n\n"
+        await update.message.reply_text(
+            "📚 اختر المادة:",
+            reply_markup=subjects_summary_menu()
+        )
 
-        "🗄️ أساسيات قواعد البيانات\n"
-        "💻 معمارية وتنظيم الحاسوب\n"
-        "☕ البرمجة الكائنية التوجه (Java)\n"
-        "🌐 شبكات الحاسوب\n"
-        "🎨 تصميم الويب 1\n"
-        "🗣️ مهارات الاتصال\n"
-        "🇾🇪 ثقافة وطنية\n\n"
+        return
 
-        "━━━━━━━━━━━━━━━━━━\n"
-        "🔙 العودة"
-    )                                      
-
+    # =====================================================
+    # التكاليف
+    # =====================================================
 
     elif text == "📝 التكاليف":
 
-        await update.message.reply_text(
-              "━━━━━━━━━━━━━━━━━━\n"
-        "📝 التكاليف والواجبات\n"
-        "━━━━━━━━━━━━━━━━━━\n\n"
+        clear_user_states(context)
 
-        "للحصول على آخر التكاليف المطلوبة\n"
-        "والتحديثات الخاصة بالمواد 👇\n\n"
+        assignments = get_assignments()
 
-        "💰 مسؤول التكاليف:\n"
-        "⭐ عبدالله البرعي\n"
-        "📞 +967730185760\n\n"
+        if assignments:
+            message = (
+                 "━━━━━━━━━━━━━━━━━━\n"
+                 "📝 التكاليف والواجبات\n"
+                 "🎓 المستوى الثاني\n"
+                 "━━━━━━━━━━━━━━━━━━\n\n"
+                 "📚 التكاليف الحالية:\n\n"
 
-        "━━━━━━━━━━━━━━━━━━\n"
-        "🔙 العودة"
-    )
+            )
 
+            for assignment in assignments:
+                subject = assignment[1]
+                title = assignment[2]
+                description = assignment[3]
+                deadline = assignment[4]
+
+                message += f"🗄️ المادة: {subject}\n"
+                message += f"📝 التكليف: {title}\n"
+
+                if description:
+                    message += f"📋 التفاصيل: {description}\n"
+
+                if deadline:
+                    message += f"📅 التسليم: {deadline}\n"
+
+                message += "\n"
+
+                message += (
+                    "━━━━━━━━━━━━━━━━━━\n"
+                    "🚀 UniX2\n"
+                    "💡 نظامك الجامعي الذكي"
+
+            )
+
+        else:
+            message = (
+                "━━━━━━━━━━━━━━━━━━\n"
+                "📝 التكاليف والواجبات\n"
+                "🎓 المستوى الثاني\n"
+                "━━━━━━━━━━━━━━━━━━\n\n"
+                "✨ لا توجد تكاليف حاليًا ✨\n\n"
+                "📚 استمتع بوقتك وركّز على مذاكرتك.\n"
+                "🔔 أي تكليف جديد سيظهر هنا مباشرة.\n\n"
+                "━━━━━━━━━━━━━━━━━━\n"
+                "🚀 UniX2"
+                "💡 نظامك الجامعي الذكي"
+            )
+
+        await update.message.reply_text(message)
+        return
+
+                
+    # =====================================================
+    # الامتحانات السابقة - للطلاب
+    # =====================================================
 
     elif text == "📄 الامتحانات السابقة":
 
+        clear_user_states(context)
+
+        context.user_data["viewing_exam"] = True
+
         await update.message.reply_text(
-        "━━━━━━━━━━━━━━━━━━\n"
-        "📄 الامتحانات السابقة\n"
-        "🎓 المستوى الثاني\n"
-        "━━━━━━━━━━━━━━━━━━\n\n"
+            """
+━━━━━━━━━━━━━━━━━━━━
+📄 الامتحانات السابقة
+━━━━━━━━━━━━━━━━━━━━
 
-        "اختر المادة التي تريد امتحاناتها 👇\n\n"
+📚 اختر المادة التي تريد عرض امتحاناتها:
 
-        "🗄️ أساسيات قواعد البيانات\n"
-        "💻 معمارية وتنظيم الحاسوب\n"
-        "☕ البرمجة الكائنية التوجه (Java)\n"
-        "🌐 شبكات الحاسوب\n"
-        "🎨 تصميم الويب 1\n"
-        "🗣️ مهارات الاتصال\n"
-        "🇾🇪 ثقافة وطنية\n\n"
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+            reply_markup=subjects_exam_menu()
+        )
 
-        "━━━━━━━━━━━━━━━━━━\n"
-        "🔙 العودة"
-    )
-        
+        return
+
+    # =====================================================
+    # الدوام
+    # =====================================================
+
     elif text == "⏰ الدوام":
 
+        clear_user_states(context)
+
         await update.message.reply_text(
-        "━━━━━━━━━━━━━━━━━━\n"
-        "⏰ حالة الدوام اليوم\n"
-        "🎓 المستوى الثاني\n"
-        "━━━━━━━━━━━━━━━━━━\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "⏰ حالة الدوام اليوم\n"
+            "🎓 المستوى الثاني\n"
+            "━━━━━━━━━━━━━━━━━━\n\n"
+            "❌ لا يوجد دوام اليوم\n\n"
+            "📌 لا توجد محاضرات مسجلة حالياً.\n\n"
+            "🔔 سيتم تحديث حالة الدوام\n"
+            "عند إضافة أي محاضرة جديدة.\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "🚀 UniX2\n"
+            "💡 نظامك الجامعي الذكي"
+        )
 
-        "❌ لا يوجد دوام اليوم\n\n"
+        return
 
-        "📌 لا توجد محاضرات مسجلة حالياً.\n\n"
+    # =====================================================
+    # أماكن القاعات
+    # =====================================================
 
-        "🔔 سيتم تحديث حالة الدوام\n"
-        "عند إضافة أي محاضرة جديدة.\n\n"
-
-        "━━━━━━━━━━━━━━━━━━\n"
-        "🚀 UniX2\n"
-        "💡 نظامك الجامعي الذكي"
-    )
-        
     elif text == "📍 أماكن القاعات":
 
+        clear_user_states(context)
+
         await update.message.reply_text(
-        "━━━━━━━━━━━━━━━━━━\n"
-        "📍 أماكن القاعات\n"
-        "🏛️ كلية علوم وهندسة الحاسوب\n"
-        "━━━━━━━━━━━━━━━━━━\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "📍 أماكن القاعات\n"
+            "🏛️ كلية علوم وهندسة الحاسوب\n"
+            "━━━━━━━━━━━━━━━━━━\n\n"
+            "🏛️ المبنى القديم\n\n"
+            "⬆️ الدور الثاني\n"
+            "🎓 المدرج 6\n\n"
+            "━━━━━━━━━━━━━━━━━━\n\n"
+            "🏢 مبنى الآداب\n\n"
+            "📌 معافا الأهدل\n"
+            "🎓 المدرجات الاثنين\n"
+            "🎓 العلفي\n"
+            "💻 معمل يمن موبايل\n"
+            "💻 معمل الهندسة\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "🚀 UniX2\n"
+            "📚 دليلك الجامعي الذكي"
+        )
 
-        "🏛️ مبنى القديم\n\n"
-        "⬆️ الدور الثاني\n"
-        "🎓 المدرج 6\n\n"
+        return
 
-        "━━━━━━━━━━━━━━━━━━\n\n"
+    # =====================================================
+    # الإعلانات
+    # =====================================================
 
-        "🏢 مبنى الآداب\n\n"
-        "📌 معافا الأهدل\n"
-        "🎓 المدرجات الاثنين\n"
-        "🎓 العلفي\n"
-        "💻 معمل يمن موبايل\n"
-        "💻 معمل الهندسة\n\n"
-
-        "━━━━━━━━━━━━━━━━━━\n"
-        "🚀 UniX2\n"
-        "📚 دليلك الجامعي الذكي"
-    )
-        
     elif text == "📢 الإعلانات":
 
+        clear_user_states(context)
+
         await update.message.reply_text(
-        "━━━━━━━━━━━━━━━━━━\n"
-        "📢 الإعلانات الجامعية\n"
-        "🎓 قسم تقنية المعلومات\n"
-        "━━━━━━━━━━━━━━━━━━\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "📢 الإعلانات الجامعية\n"
+            "🎓 قسم تقنية المعلومات\n"
+            "━━━━━━━━━━━━━━━━━━\n\n"
+            "🔔 آخر الأخبار والتحديثات:\n\n"
+            "📌 لا توجد إعلانات جديدة حالياً.\n\n"
+            "سيتم نشر:\n"
+            "✅ مواعيد الاختبارات\n"
+            "✅ تغييرات الدوام\n"
+            "✅ التنبيهات المهمة\n"
+            "✅ أخبار القسم\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "🚀 UniX2\n"
+            "📚 ابقَ على اطلاع دائم"
+        )
 
-        "🔔 آخر الأخبار والتحديثات:\n\n"
+        return
 
-        "📌 لا توجد إعلانات جديدة حالياً.\n\n"
-
-        "سيتم نشر:\n"
-        "✅ مواعيد الاختبارات\n"
-        "✅ تغييرات الدوام\n"
-        "✅ التنبيهات المهمة\n"
-        "✅ أخبار القسم\n\n"
-
-        "━━━━━━━━━━━━━━━━━━\n"
-        "🚀 UniX2\n"
-        "📚 ابقَ على اطلاع دائم"
-    )
-
-
+    # =====================================================
+    # UniX2 AI
+    # =====================================================
 
     elif text == "🧠 UniX2 AI":
 
+        clear_user_states(context)
+
         await update.message.reply_text(
-        "━━━━━━━━━━━━━━━━━━\n"
-        "🧠 UniX2 AI\n"
-        "🤖 المساعد الذكي\n"
-        "━━━━━━━━━━━━━━━━━━\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🧠 UniX2 AI\n"
+            "🤖 المساعد الذكي المتطور\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "✨ اضغط على الزر بالأسفل\n"
+            "لفتح محادثة خاصة مع المساعد الذكي ✨\n\n"
+            "👨‍💻 مهندس النظام:\n"
+            "⭐ عمر الشميري\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🚀 UniX2",
 
-        "✨ أهلاً بك في عالم الذكاء الاصطناعي ✨\n\n"
+            reply_markup=ai_chat_button()
+        )
+    
 
-        "أنا مساعدك الذكي المصمم لمساعدتك في:\n\n"
-        "📚 شرح الدروس\n"
-        "💻 مساعدة البرمجة\n"
-        "🧠 تبسيط المفاهيم\n"
-        "📝 حل الأسئلة\n"
-        "🌍 الإجابة عن الأسئلة العامة خارج نظام الجامعة\n\n"
+        return
 
-        "━━━━━━━━━━━━━━━━━━\n"
-
-        "👨‍💻 مهندس النظام:\n"
-        "⭐ عمر الشميري\n\n"
-
-        "━━━━━━━━━━━━━━━━━━\n"
-
-        "🚀 اضغط على زر بدء المحادثة\n"
-        "للدخول إلى UniX2 AI"
-    )
-        
+    # =====================================================
+    # المندوب
+    # =====================================================
 
     elif text == "👤 المندوب":
 
+        clear_user_states(context)
+
         await update.message.reply_text(
-        "━━━━━━━━━━━━━━━━━━\n"
-        "👤 مندوب الدفعة\n"
-        "🎓 المستوى الثاني\n"
-        "━━━━━━━━━━━━━━━━━━\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "👤 مندوب الدفعة\n"
+            "🎓 المستوى الثاني\n"
+            "━━━━━━━━━━━━━━━━━━\n\n"
+            "⭐ الاسم:\n"
+            "عبدالرزاق النجار\n\n"
+            "💬 حساب التواصل:\n"
+            '<a href="https://t.me/axyom_rzq">@axyom_rzq</a>\n\n'
+            "📌 اضغط على الحساب للتواصل مباشرة.\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "🚀 UniX2",
+            parse_mode="HTML"
+        )
 
-        "يسعدنا تعريفكم بمندوب الدفعة:\n\n"
+        return
 
-        "⭐ الاسم:\n"
-        "عبدالرزاق النجار\n\n"
+    # =====================================================
+    # مسؤول التكاليف
+    # =====================================================
 
-        "💬 حساب التواصل:\n"
-        '<a href="https://t.me/axyom_rzq">@axyom_rzq</a>\n\n'
-
-        "📌 اضغط على الحساب للتواصل مباشرة.\n\n"
-
-        "━━━━━━━━━━━━━━━━━━\n"
-        "🚀 UniX2\n"
-        "📚 نظامك الجامعي الذكي",
-
-        parse_mode="HTML"
-    )
-        
     elif text == "💰 مسؤول التكاليف":
+
+        clear_user_states(context)
 
         await update.message.reply_text(
             "━━━━━━━━━━━━━━━━━━\n"
             "💰 مسؤول التكاليف\n"
             "🎓 المستوى الثاني\n"
             "━━━━━━━━━━━━━━━━━━\n\n"
-
-            "للاستفسار عن آخر التكاليف\n"
-            "والواجبات المطلوبة:\n\n"
-
             "⭐ الاسم:\n"
             "عبدالله البرعي\n\n"
-
             "📱 رقم التواصل:\n"
             "+967730185760\n\n"
-
             "━━━━━━━━━━━━━━━━━━\n"
-            "🚀 UniX2\n"
-            "📚 نظامك الجامعي الذكي"
-    )
+            "🚀 UniX2"
+        )
 
+        return
 
-
+    # =====================================================
+    # مهندس النظام
+    # =====================================================
 
     elif text == "👨‍💻 مهندس النظام":
 
-           await update.message.reply_text(
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "👨‍💻 مهندس النظام\n"
-        "🚀 UniX2 Developer\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-
-        "✨ مطور وصانع نظام UniX2 الذكي ✨\n\n"
-
-        "تم تصميم وتطوير هذا النظام\n"
-        "لخدمة طلاب كلية علوم وهندسة الحاسوب\n"
-        "وقسم تقنية المعلومات.\n\n"
-
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-
-        "⭐ الاسم:\n"
-        "عمر الشميري\n\n"
-
-        "💻 التخصص:\n"
-        "تقنية معلومات | IT\n\n"
-
-        "🧠 مجالات التطوير:\n"
-        "🐍 Python\n"
-        "🤖 الذكاء الاصطناعي\n"
-        "⚙️ تطوير الأنظمة والبوتات\n\n"
-
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-
-        "💬 للتواصل مع مهندس النظام:\n"
-        '<a href="https://t.me/alshmyrymr248">@alshmyrymr248</a>\n\n'
-
-        "━━━━━━━━━━━━━━━━━━━━\n"
-
-        "🚀 UniX2\n"
-        "💡 فكرة... تطوير... مستقبل",
-
-        parse_mode="HTML"
-    )
-           
-    elif text == "ℹ️ عن النظام":
+        clear_user_states(context)
 
         await update.message.reply_text(
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "ℹ️ عن نظام UniX2\n"
-        "🎓 Smart University Assistant\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "👨‍💻 مهندس النظام\n"
+            "🚀 UniX2 Developer\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "✨ مطور وصانع نظام UniX2 الذكي ✨\n\n"
+            "⭐ الاسم:\n"
+            "عمر الشميري\n\n"
+            "💻 التخصص:\n"
+            "تقنية معلومات | IT\n\n"
+            "🧠 مجالات التطوير:\n"
+            "🐍 Python\n"
+            "🤖 الذكاء الاصطناعي\n"
+            "⚙️ تطوير الأنظمة والبوتات\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "💬 للتواصل:\n"
+            '<a href="https://t.me/alshmyrymr248">@alshmyrymr248</a>\n\n'
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "🚀 UniX2",
+            parse_mode="HTML"
+        )
 
-        "🚀 UniX2 هو نظام جامعي ذكي\n"
-        "تم تطويره لخدمة طلاب كلية علوم وهندسة الحاسوب\n"
-        "وقسم تقنية المعلومات.\n\n"
+        return
 
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
+    # =====================================================
+    # عن النظام
+    # =====================================================
 
-        "🎯 أهداف النظام:\n"
-        "✅ تسهيل الوصول إلى الخدمات الجامعية\n"
-        "✅ تنظيم المواد والملخصات\n"
-        "✅ متابعة التكاليف والواجبات\n"
-        "✅ معرفة الدوام والقاعات\n"
-        "✅ توفير المساعدة الذكية عبر UniX2 AI\n\n"
+    elif text == "ℹ️ عن النظام":
 
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        clear_user_states(context)
 
-        "⚙️ خدمات UniX2:\n"
-        "📚 المواد الدراسية\n"
-        "📁 الملخصات\n"
-        "📝 التكاليف\n"
-        "📄 الامتحانات السابقة\n"
-        "⏰ حالة الدوام\n"
-        "📢 الإعلانات الجامعية\n"
-        "🤖 الذكاء الاصطناعي\n\n"
+        await update.message.reply_text(
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "ℹ️ عن نظام UniX2\n"
+            "🎓 Smart University Assistant\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "🚀 UniX2 هو نظام جامعي ذكي\n"
+            "تم تطويره لخدمة طلاب كلية علوم وهندسة الحاسوب\n"
+            "وقسم تقنية المعلومات.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "🎯 أهداف النظام:\n"
+            "✅ تسهيل الوصول إلى الخدمات الجامعية\n"
+            "✅ تنظيم المواد والملخصات\n"
+            "✅ متابعة التكاليف والواجبات\n"
+            "✅ معرفة الدوام والقاعات\n"
+            "✅ توفير المساعدة الذكية\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "👨‍💻 مهندس النظام:\n"
+            "⭐ عمر الشميري\n\n"
+            "🚀 الإصدار:\n"
+            "Version 2.0\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "💡 UniX2"
+        )
 
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        return
 
-        "👨‍💻 مهندس النظام:\n"
-        "⭐ عمر الشميري\n\n"
-
-        "🚀 الإصدار:\n"
-        "Version 2.0\n\n"
-
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "💡 UniX2\n"
-        "نظامك الجامعي الذكي"
-    )
-
+    # =====================================================
+    # لوحة الإدارة
+    # =====================================================
 
     elif text == "🔐 لوحة الإدارة":
+
+        clear_user_states(context)
 
         from handlers.admin import admin_panel
 
         await admin_panel(update, context)
 
+        return
+
+    # =====================================================
+    # إدارة الملخصات
+    # =====================================================
 
     elif text == "📚 إدارة الملخصات":
+
+        clear_user_states(context)
 
         await update.message.reply_text(
             """
@@ -352,8 +462,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 اختر العملية التي تريد تنفيذها:
 
-
-
 ━━━━━━━━━━━━━━━━━━━━
 🚀 UniX2
 💡 نظامك الجامعي الذكي
@@ -361,49 +469,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=summaries_admin_menu()
         )
 
+        return
 
-    elif text == "📂 عرض الملخصات":
-
-        context.user_data["deleting_summary"] = False
-        context.user_data["viewing_summary"] = True
-
-        await update.message.reply_text(
-            """
-━━━━━━━━━━━━━━━━━━━━
-📂 عرض الملخصات
-━━━━━━━━━━━━━━━━━━━━
-
-📚 اختر المادة التي تريد عرض ملخصاتها:
-
-━━━━━━━━━━━━━━━━━━━━
-🚀 UniX2
-💡 نظامك الجامعي الذكي
-""",
-            reply_markup=subjects_summary_menu()
-        )
-
-    elif text == "❌ حذف ملخص":
-
-        context.user_data["deleting_summary"] = True
-
-        await update.message.reply_text(
-            """
-━━━━━━━━━━━━━━━━━━━━
-❌ حذف ملخص
-━━━━━━━━━━━━━━━━━━━━
-
-📚 اختر المادة التي تريد حذف ملخص منها:
-
-━━━━━━━━━━━━━━━━━━━━
-🚀 UniX2
-💡 نظامك الجامعي الذكي
-""",
-            reply_markup=subjects_summary_menu()
-        )
-
-
+    # =====================================================
+    # إضافة ملخص
+    # =====================================================
 
     elif text == "➕ إضافة ملخص":
+
+        clear_user_states(context)
 
         context.user_data["adding_summary"] = True
 
@@ -422,6 +496,90 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=subjects_summary_menu()
         )
 
+        return
+
+    # =====================================================
+    # إدارة الامتحانات السابقة
+    # =====================================================
+
+    elif text == "📄 إدارة الامتحانات السابقة":
+
+        clear_user_states(context)
+
+        await update.message.reply_text(
+            """
+━━━━━━━━━━━━━━━━━━━━
+📄 إدارة الامتحانات السابقة
+━━━━━━━━━━━━━━━━━━━━
+
+اختر العملية التي تريد تنفيذها:
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+            reply_markup=exams_admin_menu()
+        )
+
+        return
+
+    # =====================================================
+    # عرض الملخصات
+    # =====================================================
+
+    elif text == "📂 عرض الملخصات":
+
+        clear_user_states(context)
+
+        context.user_data["viewing_summary"] = True
+
+        await update.message.reply_text(
+            """
+━━━━━━━━━━━━━━━━━━━━
+📂 عرض الملخصات
+━━━━━━━━━━━━━━━━━━━━
+
+📚 اختر المادة التي تريد عرض ملخصاتها:
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+            reply_markup=subjects_summary_menu()
+        )
+
+        return
+
+    # =====================================================
+    # حذف ملخص
+    # =====================================================
+
+    elif text == "❌ حذف ملخص":
+
+        clear_user_states(context)
+
+        context.user_data["deleting_summary"] = True
+
+        await update.message.reply_text(
+            """
+━━━━━━━━━━━━━━━━━━━━
+❌ حذف ملخص
+━━━━━━━━━━━━━━━━━━━━
+
+📚 اختر المادة التي تريد حذف ملخص منها:
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+            reply_markup=subjects_summary_menu()
+        )
+
+        return
+
+    # =====================================================
+    # اختيار مادة
+    # =====================================================
 
     elif text in [
         "🗄️ أساسيات قواعد البيانات",
@@ -432,6 +590,65 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🗣️ مهارات الاتصال",
         "🇾🇪 ثقافة وطنية",
     ]:
+
+        # -------------------------------------------------
+        # الامتحانات
+        # -------------------------------------------------
+
+        if context.user_data.get("viewing_exam"):
+
+            context.user_data["exam_subject"] = text
+
+            exams = get_exams(text)
+
+            if not exams:
+
+                await update.message.reply_text(
+                    f"""
+━━━━━━━━━━━━━━━━━━━━
+📄 امتحانات المادة
+━━━━━━━━━━━━━━━━━━━━
+
+📚 المادة:
+{text}
+
+⚠️ لا توجد امتحانات مضافة لهذه المادة حالياً.
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+"""
+                )
+
+                return
+
+            exam_list = []
+
+            for exam_name, file_id in exams:
+                exam_list.append(exam_name)
+
+            await update.message.reply_text(
+                f"""
+━━━━━━━━━━━━━━━━━━━━
+📄 امتحانات المادة
+━━━━━━━━━━━━━━━━━━━━
+
+📚 المادة:
+{text}
+
+اختر الامتحان الذي تريد فتحه 👇
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+                reply_markup=exams_menu(exam_list)
+            )
+
+            return
+
+        # -------------------------------------------------
+        # إضافة ملخص
+        # -------------------------------------------------
 
         if context.user_data.get("adding_summary"):
 
@@ -457,6 +674,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             return
 
+        # -------------------------------------------------
+        # حذف ملخص
+        # -------------------------------------------------
+
         if context.user_data.get("deleting_summary"):
 
             context.user_data["subject"] = text
@@ -467,6 +688,27 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             for lecture, file_id in summaries:
                 lectures.append(lecture)
+
+            if not lectures:
+
+                await update.message.reply_text(
+                    f"""
+━━━━━━━━━━━━━━━━━━━━
+❌ حذف ملخص
+━━━━━━━━━━━━━━━━━━━━
+
+📚 المادة:
+{text}
+
+⚠️ لا توجد ملخصات لهذه المادة.
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+""",
+                    reply_markup=subjects_summary_menu()
+                )
+
+                return
 
             await update.message.reply_text(
                 f"""
@@ -488,58 +730,63 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             return
 
-
+        # -------------------------------------------------
+        # عرض ملخصات المادة
+        # -------------------------------------------------
 
         if context.user_data.get("viewing_summary"):
 
             context.user_data["subject"] = text
 
-
-        lectures = []
-
-        summaries = get_summaries(text)
-
-        if summaries:
-
-            message = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "📚 ملخصات المادة\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"📖 المادة: {text}\n\n"
-                "📂 الملخصات المتوفرة:\n\n"
-            )
+            summaries = get_summaries(text)
 
             lectures = []
 
             for lecture, file_id in summaries:
                 lectures.append(lecture)
-                message += f"• {lecture}\n"
 
-            message += (
-                "\n━━━━━━━━━━━━━━━━━━━━\n"
-                "🚀 UniX2\n"
-                "💡 نظامك الجامعي الذكي"
+            if summaries:
+
+                message = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "📚 ملخصات المادة\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"📖 المادة: {text}\n\n"
+                    "📂 الملخصات المتوفرة:\n\n"
+                )
+
+                for lecture, file_id in summaries:
+                    message += f"• {lecture}\n"
+
+                message += (
+                    "\n━━━━━━━━━━━━━━━━━━━━\n"
+                    "🚀 UniX2\n"
+                    "💡 نظامك الجامعي الذكي"
+                )
+
+            else:
+
+                message = (
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "📚 ملخصات المادة\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"📖 المادة: {text}\n\n"
+                    "⚠️ لا توجد ملخصات مضافة لهذه المادة حالياً.\n\n"
+                    "🔔 سيتم إضافة الملخصات قريباً.\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "🚀 UniX2"
+                )
+
+            await update.message.reply_text(
+                message,
+                reply_markup=view_summaries_menu(lectures)
             )
 
-        else:
+            return
 
-            message = (
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "📚 ملخصات المادة\n"
-                "━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"📖 المادة: {text}\n\n"
-                "⚠️ لا توجد ملخصات مضافة لهذه المادة حالياً.\n\n"
-                "🔔 سيتم إضافة الملخصات قريباً.\n\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "🚀 UniX2\n"
-                "💡 نظامك الجامعي الذكي"
-            )
-
-        await update.message.reply_text(
-            message,
-            reply_markup=view_summaries_menu(lectures)
-        )
-
+    # =====================================================
+    # أزرار المحاضرات
+    # =====================================================
 
     elif text in [
         "1️⃣ المحاضرة الأولى",
@@ -549,29 +796,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "5️⃣ المحاضرة الخامسة",
         "6️⃣ المحاضرة السادسة",
         "7️⃣ المحاضرة السابعة",
-        "🔙 العودة للمواد",
     ]:
 
-
-        if text == "🔙 العودة للمواد":
-
-            await update.message.reply_text(
-                """
-━━━━━━━━━━━━━━━━━━━━
-➕ إضافة ملخص جديد
-━━━━━━━━━━━━━━━━━━━━
-
-📚 اختر المادة التي تريد إضافة ملخص لها:
-
-━━━━━━━━━━━━━━━━━━━━
-🚀 UniX2
-💡 نظامك الجامعي الذكي
-""",
-                reply_markup=subjects_summary_menu()
-            )
-
-            return
-
+        # -------------------------------------------------
+        # عرض الملخص
+        # -------------------------------------------------
 
         if context.user_data.get("viewing_summary"):
 
@@ -580,6 +809,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             summaries = get_summaries(subject)
 
             for lecture, file_id in summaries:
+
                 if lecture == text:
 
                     await update.message.reply_document(
@@ -601,7 +831,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """
                     )
 
+                    return
+
+            await update.message.reply_text(
+                "⚠️ لم يتم العثور على ملف هذه المحاضرة."
+            )
+
             return
+
+        # -------------------------------------------------
+        # حذف ملخص
+        # -------------------------------------------------
 
         if context.user_data.get("deleting_summary"):
 
@@ -629,17 +869,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 💡 نظامك الجامعي الذكي
 """
             )
+
             context.user_data["deleting_summary"] = False
             context.user_data["subject"] = None
 
             return
 
-
+        # -------------------------------------------------
+        # إضافة ملخص
+        # -------------------------------------------------
 
         if context.user_data.get("adding_summary"):
 
             context.user_data["lecture"] = text
-
 
             await update.message.reply_text(
                 """
@@ -661,40 +903,157 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             return
 
+    elif text == "🔙 العودة" and context.user_data.get("viewing_exam"):
+        context.user_data.pop("viewing_exam", None)
+        context.user_data.pop("exam_subject", None)
+        await update.message.reply_text(
+            "📄 اختر المادة التي تريد عرض امتحاناتها:",
+            reply_markup=subjects_exam_menu()
+        )
+        return
 
+    # =====================================================
+    # فتح امتحان
+    # =====================================================
 
-    elif text == "🔙 العودة للقائمة الرئيسية":
+    elif context.user_data.get("viewing_exam"):
 
-        from keyboards.main_menu import main_menu
+        subject = context.user_data.get("exam_subject")
+
+        exams = get_exams(subject)
+
+        for exam_name, file_id in exams:
+
+            if exam_name == text:
+
+                await update.message.reply_document(
+                    file_id,
+                    caption=f"""
+━━━━━━━━━━━━━━━━━━━━
+📄 الامتحان السابق
+━━━━━━━━━━━━━━━━━━━━
+
+📚 المادة:
+{subject}
+
+📝 الامتحان:
+{exam_name}
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+"""
+                )
+
+                return
+
+        await update.message.reply_text(
+            "⚠️ لم يتم العثور على ملف الامتحان."
+        )
+
+        return
+
+    # =====================================================
+    # العودة من شاشة الامتحانات إلى المواد
+    # =====================================================
+
+    elif text == "🔙 العودة للمواد":
+
+        if context.user_data.get("viewing_exam"):
+
+            context.user_data["viewing_exam"] = True
+            context.user_data.pop("exam_subject", None)
+
+            await update.message.reply_text(
+                """
+━━━━━━━━━━━━━━━━━━━━
+📄 الامتحانات السابقة
+━━━━━━━━━━━━━━━━━━━━
+
+📚 اختر المادة التي تريد عرض امتحاناتها:
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+                reply_markup=subjects_exam_menu()
+            )
+
+            return
+
+        if (
+            context.user_data.get("viewing_summary")
+            or context.user_data.get("deleting_summary")
+            or context.user_data.get("adding_summary")
+        ):
+
+            await update.message.reply_text(
+                """
+━━━━━━━━━━━━━━━━━━━━
+📚 اختر المادة:
+
+━━━━━━━━━━━━━━━━━━━━
+🚀 UniX2
+💡 نظامك الجامعي الذكي
+""",
+                reply_markup=subjects_summary_menu()
+            )
+
+            return
+
+    # =====================================================
+    # العودة من اختيار المادة
+    # =====================================================
+
+    elif text == "🔙 العودة":
+
+        clear_user_states(context)
 
         await update.message.reply_text(
             "🏠 تم الرجوع إلى القائمة الرئيسية.",
             reply_markup=main_menu()
         )
 
+        return
+
+    # =====================================================
+    # العودة للوحة الإدارة
+    # =====================================================
 
     elif text == "🔙 العودة للوحة الإدارة":
 
-        from keyboards.main_menu import admin_menu
+        clear_user_states(context)
 
         await update.message.reply_text(
             "🔐 تم الرجوع إلى لوحة الإدارة.",
             reply_markup=admin_menu()
         )
 
+        return
 
-    elif text == "🔙 العودة":
+    # =====================================================
+    # العودة للقائمة الرئيسية
+    # =====================================================
+
+    elif text == "🔙 العودة للقائمة الرئيسية":
+
+        clear_user_states(context)
 
         await update.message.reply_text(
-            "🔐 تم الرجوع إلى إدارة الملخصات.",
-            reply_markup=summaries_admin_menu()
+            "🏠 تم الرجوع إلى القائمة الرئيسية.",
+            reply_markup=main_menu()
         )
 
+        return
 
+    # =====================================================
+    # زر غير معروف
+    # =====================================================
 
     else:
 
         await update.message.reply_text(
-            "⚡ اختر أحد الخيارات من القائمة الرئيسية."
+            "⚡ اختر أحد الخيارات من القائمة."
         )
 
+    

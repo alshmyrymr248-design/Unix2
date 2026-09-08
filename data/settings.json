@@ -1,0 +1,8 @@
+{
+    "system_name": "UniX2",
+    "version": "2.0",
+    "maintenance_mode": false,
+    "allow_student_registration": true,
+    "allow_file_upload": true,
+    "max_file_size_mb": 20
+}

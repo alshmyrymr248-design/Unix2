@@ -8,7 +8,11 @@ from telegram.ext import (
     filters,
 )
 
-from config import BOT_TOKEN, AI_BOT_TOKEN, GEMINI_API_KEY
+import os
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+AI_BOT_TOKEN = os.getenv("AI_BOT_TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 from handlers.start import start
 from handlers.buttons import button_handler
 from handlers.files import handle_document

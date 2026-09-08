@@ -1,6 +1,7 @@
 from telegram import ReplyKeyboardMarkup
 
-from config import SYSTEM_NAME
+import os
+SYSTEM_NAME = os.getenv("SYSTEM_NAME", "Unix2")
 
 
 # =========================================================

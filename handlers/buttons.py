@@ -1,3 +1,6 @@
+from multiprocessing import context
+from turtle import update
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -1044,6 +1047,117 @@ async def button_handler(
             reply_markup=main_menu()
         )
 
+        return
+
+
+    # =====================================================
+    # إدارة التكاليف
+    # =====================================================
+
+    elif text == "📝 إدارة التكاليف":
+        clear_user_states(context)
+        context.user_data["adding_assignment"] = True
+        await update.message.reply_text(
+            "📚 اختر المادة التي تريد إضافة تكليف لها:",
+            reply_markup=subjects_summary_menu()
+        )
+
+        return
+
+    # =====================================================
+    # إدارة الإعلانات
+    # =====================================================
+
+    elif text == "📢 إدارة الإعلانات":
+        clear_user_states(context)
+        context.user_data["adding_announcement"] = True
+        await update.message.reply_text(
+            "📢 أرسل نص الإعلان الذي تريد نشره للطلاب:"
+        )
+
+        return
+    # =====================================================
+    # إدارة الدوام
+    # =====================================================
+
+    elif text == "⏰ إدارة الدوام":
+        clear_user_states(context)
+        context.user_data["adding_attendance"] = True
+        await update.message.reply_text(
+            "⏰ أرسل تفاصيل الدوام بهذا الشكل:\n\n"
+            "المادة | القاعة | الدكتور | الساعة\n\n"
+            "مثال:\n"
+            "قواعد البيانات | المدرج 6 | د. أحمد | 10:00"
+       )
+        
+        return
+
+    # =====================================================
+    # إدارة أماكن القاعات
+    # =====================================================
+
+    elif text == "📍 إدارة أماكن القاعات":
+        clear_user_states(context)
+        context.user_data["adding_room"] = True
+        await update.message.reply_text(
+            "📍 أرسل اسم القاعة والمبنى والدور بهذا الشكل:\n\n"
+            "اسم القاعة | المبنى | الدور\n\n"
+            "مثال:\n"
+            "المدرج 6 | المبنى القديم | الثاني"
+        )
+
+        return
+
+    # =====================================================
+    # إدارة الطلاب
+    # =====================================================
+
+    elif text == "👥 إدارة الطلاب":
+        clear_user_states(context)
+        from database.queries import get_all_users, count_users
+
+        total = count_users()
+        users = get_all_users()
+
+        message = "👥 إدارة الطلاب\n\n"
+        message += f"📊 عدد الطلاب المسجلين: {total}\n\n"
+
+        for user in users[:20]:
+            message += f"• {user[2]} - {user[3]}\n"
+
+        await update.message.reply_text(message)
+
+        return
+    
+    # =====================================================
+    # النسخ الاحتياطي
+    # =====================================================
+
+    elif text == "💾 النسخ الاحتياطي":
+        clear_user_states(context)
+        from utils.backup import create_backup
+        backup_file = create_backup()
+
+        if backup_file:
+            await update.message.reply_text(f"✅ تم إنشاء نسخة احتياطية:\n{backup_file.name}")
+        else:
+           await update.message.reply_text("❌ فشل إنشاء النسخة الاحتياطية.")
+
+        return
+
+    # =====================================================
+    # إعدادات النظام
+    # =====================================================
+
+    elif text == "⚙️ إعدادات النظام":
+        clear_user_states(context)
+        await update.message.reply_text(
+            "⚙️ إعدادات النظام\n\n"
+            "✅ اسم النظام: UniX2\n"
+            "✅ الإصدار: 2.0\n"
+            "✅ الحالة: يعمل"
+        )
+    
         return
 
     # =====================================================

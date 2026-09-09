@@ -3,7 +3,12 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import ADMIN_IDS, ASSIGNMENT_ADMIN_IDS, SYSTEM_NAME, MAX_FILE_SIZE_MB
+import os
+
+ADMIN_IDS = [6850454574]
+ASSIGNMENT_ADMIN_IDS = []
+SYSTEM_NAME = os.getenv("SYSTEM_NAME", "UniX2")
+MAX_FILE_SIZE_MB = int(os.getenv("MAX_FILE_SIZE_MB", "20"))
 from database.queries import add_summary, add_exam
 from keyboards.main_menu import subjects_summary_menu
 from keyboards.main_menu import subjects_exam_menu

@@ -2,7 +2,8 @@ import google.generativeai as genai
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import GEMINI_API_KEY
+import os
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # إعداد Gemini
 genai.configure(api_key=GEMINI_API_KEY)

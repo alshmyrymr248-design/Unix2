@@ -3,7 +3,10 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import ADMIN_IDS, SYSTEM_NAME
+import os
+
+ADMIN_IDS = [6850454574]
+SYSTEM_NAME = os.getenv("SYSTEM_NAME", "UniX2")
 from keyboards.admin_menu import admin_menu
 
 logger = logging.getLogger(__name__)

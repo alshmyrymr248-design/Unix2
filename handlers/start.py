@@ -4,15 +4,14 @@ from telegram.ext import ContextTypes
 from keyboards.main_menu import main_menu
 from keyboards.admin_menu import admin_menu
 
-from config import (
-    ADMIN_IDS,
-    ASSIGNMENT_ADMIN_IDS,
-    REP_IDS,
-    SYSTEM_NAME,
-    SYSTEM_VERSION,
-    MAINTENANCE_MODE,
-)
+import os
 
+ADMIN_IDS = [6850454574]
+ASSIGNMENT_ADMIN_IDS = []
+REP_IDS = []
+SYSTEM_NAME = os.getenv("SYSTEM_NAME", "UniX2")
+SYSTEM_VERSION = os.getenv("SYSTEM_VERSION", "2.0")
+MAINTENANCE_MODE = os.getenv("MAINTENANCE_MODE", "false").lower() == "true"
 from database.queries import add_user
 
 

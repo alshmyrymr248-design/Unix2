@@ -1,4 +1,5 @@
 from multiprocessing import context
+from pydoc import text
 from turtle import update
 
 from telegram import Update
@@ -650,6 +651,25 @@ async def button_handler(
             return
 
         # -------------------------------------------------
+        # إضافة تكليف
+        # -------------------------------------------------
+
+        if context.user_data.get("adding_assignment"):
+
+            context.user_data["assignment_subject"] = text
+
+            await update.message.reply_text(
+                f"📚 المادة: {text}\n\n"
+                "📝 أرسل اسم التكليف وتاريخ التسليم بهذا الشكل:\n\n"
+                "اسم التكليف | تاريخ التسليم\n\n"
+                "مثال:\n"
+                "حل الأسئلة 1-10 | الخميس"
+            )
+
+            return
+
+
+        # -------------------------------------------------
         # إضافة ملخص
         # -------------------------------------------------
 
@@ -1159,6 +1179,37 @@ async def button_handler(
         )
     
         return
+
+    # =====================================================
+    # استقبال اسم التكليف وتاريخ التسليم
+    # =====================================================
+
+    elif context.user_data.get("adding_assignment") and context.user_data.get("assignment_subject"):
+
+       from database.queries import add_assignment
+
+       parts = text.split("|")
+
+       title = parts[0].strip() if len(parts) > 0 else text
+       deadline = parts[1].strip() if len(parts) > 1 else ""
+
+       subject = context.user_data.get("assignment_subject")
+
+       add_assignment(subject, title, "", deadline, None, str(update.effective_user.id))
+
+       await update.message.reply_text(
+           f"✅ تم حفظ التكليف بنجاح\n\n"
+           f"📚 المادة: {subject}\n"
+           f"📝 التكليف: {title}\n"
+           f"📅 التسليم: {deadline}"
+        )
+
+       context.user_data.pop("adding_assignment", None)
+       context.user_data.pop("assignment_subject", None)
+
+       return
+
+
 
     # =====================================================
     # زر غير معروف

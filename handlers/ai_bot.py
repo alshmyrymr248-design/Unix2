@@ -1,18 +1,21 @@
+import os
 import logging
 import google.generativeai as genai
 
 from telegram import Update
 from telegram.ext import ContextTypes
 
-import os
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
 # إعداد Gemini
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-3.6-flash")
 
 logger = logging.getLogger(__name__)
 
+
+# ============================
+# أمر البداية
+# ============================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """رسالة الترحيب بمحادثة UniX2 AI"""
@@ -60,8 +63,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(welcome_text)
 
 
+# ============================
+# معالجة الرسائل النصية
+# ============================
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """معالجة رسائل الطالب وإرسالها للذكاء الاصطناعي"""
+    """معالجة رسائل الطالب النصية"""
 
     user_text = update.message.text
 
@@ -90,5 +97,44 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"AI Error: {e}")
         await update.message.reply_text(
             "⚠️ حدث خطأ أثناء معالجة سؤالك.\n"
+            "حاول مرة أخرى بعد قليل."
+        )
+
+
+# ============================
+# معالجة الصور
+# ============================
+
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """معالجة الصور المرسلة للذكاء الاصطناعي"""
+
+    await update.message.chat.send_chat_action("typing")
+
+    try:
+        # جلب أكبر حجم للصورة
+        photo = update.message.photo[-1]
+        file = await photo.get_file()
+
+        # تنزيل الصورة في الذاكرة
+        photo_bytes = await file.download_as_bytearray()
+
+        # إرسال الصورة إلى Gemini
+        image_data = {
+            "mime_type": "image/jpeg",
+            "data": bytes(photo_bytes),
+        }
+
+        caption = update.message.caption or "اشرح لي هذه الصورة بالتفصيل"
+
+        response = model.generate_content([caption, image_data])
+
+        reply_text = response.text
+
+        await update.message.reply_text(reply_text)
+
+    except Exception as e:
+        logger.error(f"Photo AI Error: {e}")
+        await update.message.reply_text(
+            "⚠️ حدث خطأ أثناء معالجة الصورة.\n"
             "حاول مرة أخرى بعد قليل."
         )

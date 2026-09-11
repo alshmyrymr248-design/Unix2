@@ -57,11 +57,13 @@ def build_ai_app():
 
     from handlers.ai_bot import start as ai_start
     from handlers.ai_bot import handle_message as ai_handle
+    from handlers.ai_bot import handle_photo as ai_photo
 
     app = Application.builder().token(AI_BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", ai_start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, ai_handle))
+    app.add_handler(MessageHandler(filters.PHOTO, ai_photo))
 
     return app
 

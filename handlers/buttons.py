@@ -223,19 +223,40 @@ async def button_handler(
 
         clear_user_states(context)
 
-        await update.message.reply_text(
-            "━━━━━━━━━━━━━━━━━━\n"
-            "⏰ حالة الدوام اليوم\n"
-            "🎓 المستوى الثاني\n"
-            "━━━━━━━━━━━━━━━━━━\n\n"
-            "❌ لا يوجد دوام اليوم\n\n"
-            "📌 لا توجد محاضرات مسجلة حالياً.\n\n"
-            "🔔 سيتم تحديث حالة الدوام\n"
-            "عند إضافة أي محاضرة جديدة.\n\n"
-            "━━━━━━━━━━━━━━━━━━\n"
-            "🚀 UniX2\n"
-            "💡 نظامك الجامعي الذكي"
-        )
+        from database.queries import get_attendance
+
+        attendance = get_attendance()
+
+        if attendance:
+
+           latest = attendance[0]
+           details = latest[6] if len(latest) > 6 else ""
+
+           await update.message.reply_text(
+               f"━━━━━━━━━━━━━━━━━━━━\n"
+               f"⏰ دوام اليوم\n"
+               f"🎓 المستوى الثاني\n"
+               f"━━━━━━━━━━━━━━━━━━━━\n\n"
+               f"{details}\n\n"
+               f"━━━━━━━━━━━━━━━━━━━━\n"
+               f"🚀 UniX2"
+            )
+
+        else:
+
+            await update.message.reply_text(
+                "━━━━━━━━━━━━━━━━━━\n"
+                "⏰ حالة الدوام اليوم\n"
+                "🎓 المستوى الثاني\n"
+                "━━━━━━━━━━━━━━━━━━\n\n"
+                "❌ لا يوجد دوام اليوم\n\n"
+                "📌 لا توجد محاضرات مسجلة حالياً.\n\n"
+                "🔔 سيتم تحديث حالة الدوام\n"
+                "عند إضافة أي محاضرة جديدة.\n\n"
+                "━━━━━━━━━━━━━━━━━━\n"
+                "🚀 UniX2\n"
+                "💡 نظامك الجامعي الذكي"
+            )
 
         return
 
@@ -1104,13 +1125,23 @@ async def button_handler(
         clear_user_states(context)
         context.user_data["adding_attendance"] = True
         await update.message.reply_text(
-            "⏰ أرسل تفاصيل الدوام بهذا الشكل:\n\n"
-            "المادة | القاعة | الدكتور | الساعة\n\n"
-            "مثال:\n"
-            "قواعد البيانات | المدرج 6 | د. أحمد | 10:00"
-       )
-        
+            "⏰ أرسل تفاصيل الدوام كاملة كرسالة واحدة.\n\n"
+            "📌 يمكن أن تحتوي على محاضرة أو اثنتين أو ثلاث.\n\n"
+            "المثال:\n\n"
+            "الأربعاء 2026/9/9م\n"
+            "━━━━━━━━━━━━━━━━\n\n"
+            "🔹 المحاضرة الأولى:\n"
+            "📖 المقرر: ...\n"
+            "👨‍🏫 الدكتور: ...\n"
+            "🕒 الوقت: ...\n"
+            "🏛️ المكان: ...\n\n"
+            "━━━━━━━━━━━━━━━━\n"
+            "دمتم سالمين"
+        )
+
         return
+
+
 
     # =====================================================
     # إدارة أماكن القاعات
@@ -1209,6 +1240,32 @@ async def button_handler(
 
        return
 
+
+    # =====================================================
+    # استقبال رسالة الدوام كاملة
+    # =====================================================
+
+    elif context.user_data.get("adding_attendance"):
+
+        from database.queries import add_attendance
+
+        add_attendance(
+            day="اليوم",
+            status="مفعل",
+            subject="",
+            time="",
+            location="",
+            details=text,
+        )
+
+        await update.message.reply_text(
+            "✅ تم حفظ الدوام بنجاح\n\n"
+            "📢 سيظهر للطلاب في زر ⏰ الدوام"
+        )
+
+        context.user_data.pop("adding_attendance", None)
+
+        return
 
 
     # =====================================================
